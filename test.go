@@ -1,7 +1,7 @@
 package main
 
 import (
-	"eos/algorithm/core"
+	"eos/core"
 	"fmt"
 	"log"
 	"math/big"
@@ -47,8 +47,8 @@ func main() {
 	triple_A, err := core.ShamirShare(triple.A, threshold, numShares)
 	triple_B, err := core.ShamirShare(triple.B, threshold, numShares)
 	triple_C, err := core.ShamirShare(triple.C, threshold, numShares)
-	shares_e := make([]core.Share, numShares)
-	shares_d := make([]core.Share, numShares)
+	shares_e := make([]*big.Int, numShares)
+	shares_d := make([]*big.Int, numShares)
 	for i := range shares_x {
 		shares_e[i], shares_d[i] = core.BeaverAdd(shares_x[i], shares_y[i], triple_A[i], triple_B[i])
 	}
@@ -56,7 +56,7 @@ func main() {
 	secret_d, err := core.Recover(shares_d, coefficients)
 	fmt.Println("x,y:", secret_x, secret_y)
 
-	shares_xy := make([]core.Share, numShares)
+	shares_xy := make([]*big.Int, numShares)
 	for i := range shares_x {
 		shares_xy[i] = core.BeaverMul(secret_e, secret_d, triple_A[i], triple_B[i], triple_C[i])
 	}

@@ -1,21 +1,24 @@
-package utils
+package core
 
 import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"sync"
+	//"github.com/herumi/bls-eth-go-binary/bls"
 )
 
-type FiniteField interface {
-	RandomField() *big.Int
-	ModAdd(a, b *big.Int) *big.Int
-	ModSub(a, b *big.Int) *big.Int
-	ModMul(a, b *big.Int) *big.Int
-	ModInverse(a *big.Int) (*big.Int, error)
-}
-
 // 定义质数 p，作为有限域的模
-var p = big.NewInt(101) // 这里我们选择 p = 101，作为有限域的模
+var p *big.Int
+var once sync.Once
+
+// 初始化 p 为固定的大素数
+func init() {
+	p = new(big.Int)
+	hexString := "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"
+	// 尝试解析十六进制字符串
+	p.SetString(hexString, 16)
+}
 
 // ModAdd 执行有限域上的加法 (a + b) % p
 func ModAdd(a, b *big.Int) *big.Int {
@@ -40,7 +43,7 @@ func ModInverse(a *big.Int) (*big.Int, error) {
 	// 使用扩展欧几里得算法计算模逆
 	g, x, _ := extendedGCD(a, p)
 	if g.Cmp(big.NewInt(1)) != 0 {
-		return nil, fmt.Errorf("modular inverse does not exist")
+		fmt.Errorf("modular inverse does not exist")
 	}
 	return new(big.Int).Mod(x, p), nil
 }
@@ -68,27 +71,10 @@ func extendedGCD(a, b *big.Int) (*big.Int, *big.Int, *big.Int) {
 
 // RandomField 生成有限域上的随机数
 func RandomField() *big.Int {
+	if p.Sign() <= 0 {
+		fmt.Println("Warning: limit must be greater than zero, returning default value.")
+		return big.NewInt(0)
+	}
 	randomElement, _ := rand.Int(rand.Reader, p)
 	return randomElement
-}
-
-func main() {
-	a := big.NewInt(45) // 第一个数
-	b := big.NewInt(25) // 第二个数
-
-	// 加法运算 (a + b) % p
-	sum := ModAdd(a, b)
-	fmt.Printf("%d + %d mod %d = %d\n", a, b, p, sum)
-
-	// 乘法运算 (a * b) % p
-	product := ModMul(a, b)
-	fmt.Printf("%d * %d mod %d = %d\n", a, b, p, product)
-
-	// 求逆运算 a^(-1) mod p
-	inv, err := ModInverse(a)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("Inverse of %d mod %d = %d\n", a, p, inv)
-	}
 }
